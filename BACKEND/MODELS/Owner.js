@@ -4,14 +4,15 @@ const owner = new mongoose.Schema({
     OrganisationCode:{
         type:String,
     },
-    name:{
+    Name:{
         type:String,
         required:true,
     },
     email:{
         type:String,
         required:[true,'please enter email id to continue'],
-        validare:[validator.isEmail,'please enter a valid email id to proceed']
+        validare:[validator.isEmail,'please enter a valid email id to proceed'],
+        
     },
     phoneNumber:{
         type:Number,

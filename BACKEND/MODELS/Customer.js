@@ -4,8 +4,9 @@ const validator = require('validator');
 const customer = new mongoose.Schema({
     OrganisationCode:{
         type:String,
+        required:[true,'please enter the buisness code']
     },
-    name:{
+    Name:{
         type:String,
         required:[true,'please enter the name to continue']
     },
