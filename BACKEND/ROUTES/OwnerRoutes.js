@@ -3,4 +3,5 @@ const OwnerController = require('./../CONTROLLERS/OwnerController');
 const router = express.Router();
 
 router.route('/RegisterOwner').post(OwnerController.OwnerRegistration);
+router.route('/getAllOwner').get(OwnerController.getAllOwners);
 module.exports = router;

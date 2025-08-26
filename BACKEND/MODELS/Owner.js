@@ -38,3 +38,4 @@ const owner = new mongoose.Schema({
 })
 
 module.exports = mongoose.model('Owner',owner);
+
