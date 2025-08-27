@@ -63,26 +63,52 @@ exports.getAllOwners = async(req,res,next)=>{
 
 exports.patchOwner = async(req,res,next)=>{
     try{
-        const phoneNumber = req.params;
-        const Owner = await Owner.findOne({phoneNumber});
-        if(!Owner) {
+        const phoneNumber = req.params.phoneNumber;
+        const Ownerdata = await Owner.findOne({phoneNumber});
+        if(!Ownerdata) {
             return res.status(404).json({
                 status:'fail',
                 message:'the Owner does not exists'
             })
         }
-        let updatedName = req.body.Name??Owner.Name;
-        let updatedNumber = req.body.phoneNumber??Owner.phoneNumber;//need an authorization issue
+        let updatedName = req.body.Name??Ownerdata.Name;
+        // let updatedNumber = req.body.phoneNumber??Owner.phoneNumberneed an authorization issue//
         const updatedData = {
             ...req.body,
             Name:updatedName,
-            email,
-            phoneNumber:updatedNumber,
+            email:Ownerdata.email
+            // phoneNumber:updatedNumber,
         }
-        const data = await Owner.findOneAndUpdate({
+        const data = await Owner.findOneAndUpdate(
             {
-                
+            
+                phoneNumber
+            },
+            {
+                $set:updatedData
+            },
+            {
+                new:true,runValidators:true
             }
+        )
+        console.log(data.email)
+        if(data.email) {
+            await transporter.sendMail({
+                from:process.env.email_user,
+                to:data.email,
+                subject:'INFORMATION UPDATED',
+                text:'Dear User. \n\n Your information was updated on your request \n\n \n\n \n\n if it was not you please contact on devaccuflow@gmail.com '
+            })
+        }
+        res.status(200).json({
+            status:'success',
+            newData:data
+        })
+    } catch(error) {
+        res.status(500).json({
+            status:'fail',
+            message:error.message
         })
     }
+    
 }
