@@ -3,12 +3,14 @@ const express = require('express');
 const app = express();
 const OwnerRouter = require('./ROUTES/OwnerRoutes');
 const CustomerRouter = require('./ROUTES/CustomerRoutes');
+const CreditRouter = require('./ROUTES/CreditRouter');
 const mongoose = require('mongoose');
 // const { applyTimestamps } = require('./MODELS/Owner');
 console.log(process.env.PORT);
 app.use(express.json());
 app.use('/ilba',OwnerRouter);
 app.use('/ilba',CustomerRouter);
+app.use('/ilba/',CreditRouter);
 mongoose.connect(process.env.CONNECTION_STRING,{
 }).then(()=>{
     console.log('connected to the database through port ',process.env.PORT);
