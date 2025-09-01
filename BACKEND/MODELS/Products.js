@@ -17,6 +17,19 @@ const product  = new mongoose.Schema({
     sellingPrice:{
         type:Number,
         required:[true,'please enter a selling price']
+    },
+    quantity:{
+        type:Number,
+        required:[true,'please enter the quantity of the product which u bought ']
+    },
+    totalCostSpent:{
+        type:Number
+    },
+    dateofPurchase:{
+        type:Date,
+    },
+    updationChanges:{
+        type:Date
     }
 })
 
