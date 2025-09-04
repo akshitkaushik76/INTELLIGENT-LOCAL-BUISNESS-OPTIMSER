@@ -13,7 +13,7 @@ function TimeFunction() {
     const month = (now.getMonth()+1).toString().padStart(2,'0');
     const year = now.getFullYear().toString().padStart(2,'0');
    
-    return `${hours}:${minutes}:${seconds}  Date:${day}:${month}:${year}`;
+    return `${hours}:${minutes}:${seconds}  Date:${day}/${month}/${year}`;
 }
 
 exports.addProduct = async(req,res,next)=>{
@@ -23,7 +23,7 @@ exports.addProduct = async(req,res,next)=>{
         const totalCostSpent = costPrice*quantity;
         const dateofPurchase = TimeFunction();
         const data = await Product.create({
-            OrganizationCode,
+            OrganisationCode:OrganizationCode,
             productName,
             costPrice,
             sellingPrice,
@@ -46,7 +46,9 @@ exports.addProduct = async(req,res,next)=>{
 exports.patchProduct = async(req,res,next)=>{
     try{
          const name = req.params.Name;
-        const productdata = await Product.findOne({productName:name})
+         const code = req.params.code;
+        const productdata = await Product.findOne({productName:name,OrganisationCode:code});
+        console.log(productdata);
         if(!productdata) {
            return res.status(404).json({
             status:'failure',
@@ -54,7 +56,7 @@ exports.patchProduct = async(req,res,next)=>{
            })
         }
         const OrganizationCode = productdata.OrganisationCode;
-        const Ownerdata = await Owner.findOne({OrganizationCode});
+        const Ownerdata = await Owner.findOne({OrganisationCode:OrganizationCode});
         if(!Ownerdata) {
             return res.status(404).json({
                 status:'failure',
@@ -64,8 +66,12 @@ exports.patchProduct = async(req,res,next)=>{
         let newproductName = req.body.productName??productdata.productName;
         let newCostPrice = req.body.CostPrice??productdata.costPrice;;
         let newSellingPrice = req.body.SellingPrice??productdata.sellingPrice;
-        let newQuantity = req.body.quantity??productdata.quantity;
-        const newtotalCostSpent = newCostPrice*newQuantity+productdata.totalCostSpent;
+        let newQuantity = req.body.quantity;
+        if(newQuantity) {
+            newQuantity = productdata.quantity+newQuantity;
+        }
+        let updatedQuantity = newCostPrice*(newQuantity-productdata.quantity);
+        const newtotalCostSpent = productdata.totalCostSpent+updatedQuantity;
         const updatedData = {
             ...req.body,
             OrganizationCode,
@@ -74,12 +80,12 @@ exports.patchProduct = async(req,res,next)=>{
             sellingPrice:newSellingPrice,
             quantity:newQuantity,
             totalCostSpent:newtotalCostSpent,
-            dateofPurchase,
+            dateofPurchase:productdata.dateofPurchase,
             updationChanges:TimeFunction()
         }
        
         const prod = await Product.findOneAndUpdate({
-            productName:name
+            productName:name,OrganisationCode:code
         },
     {$set:updatedData},
      {new:true,runValidators:true}     
@@ -97,6 +103,28 @@ exports.patchProduct = async(req,res,next)=>{
         prod
      })
     } catch(error) {
+        res.status(500).json({
+            status:'fail',
+            error:error.message
+        })
+    }
+}
+exports.getProduct = async(req,res,next)=>{
+    try{
+        const name = req.params.Name;
+        const code = req.params.code;
+        const product = await Product.findOne({productName:name, OrganisationCode:code});
+        if(!product) {
+            return res.status(404).json({
+                status:'failure',
+                message:'the product is not registered'
+            })
+        }
+        res.status(201).json({
+            status:'success',
+            product
+        })
+    }catch(error) {
         res.status(500).json({
             status:'fail',
             error:error.message

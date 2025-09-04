@@ -5,6 +5,21 @@ const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const SPECIAL = "!@#$%^&*";
 const CHARSET = LETTERS+NUMBERS+SPECIAL;
 const transporter = require('./../Utils/email');
+const Buisness = require('./../MODELS/BusinessSchema');
+const BusinessSchema = require('./../MODELS/BusinessSchema');
+
+function CreateCreationCode(OrganisationCode) {
+   const now = new Date();
+   const hours = now.getHours().toString().padStart(2,'0');
+   const minutes = now.getMinutes().toString().padStart(2,'0');
+   const seconds = now.getSeconds().toString().padStart(2,'0');
+
+   const day = now.getDay().toString().padStart(2,'0');
+   const month = now.getMonth().toString().padStart(2,'0');
+   const year = now.getFullYear().toString().padStart(2,'0');
+
+   return `${OrganisationCode}${hours}:${minutes}:${seconds}${day}${month}${year}`;
+}
 async function generateOrganisationCode(Name) {
     const prefix = Name.slice(0,3).toUpperCase();
 
@@ -18,6 +33,14 @@ exports.OwnerRegistration  = async(req,res,next)=>{//to do-> to add multiple bui
    try{
      const { Name, email, phoneNumber, password, confirmpassword } = req.body;
     const code = await generateOrganisationCode(Name);
+    const newcreationCode = CreateCreationCode(code);
+    const buisnessData = await Buisness.create({
+        OrganisationCode:code,
+        Owner:Name,
+        phoneNumber:phoneNumber,
+        email:email,
+        CreationCode:newcreationCode
+    })
     const newOwner = await Owner.create({
         OrganisationCode:code,
         Name,
@@ -31,12 +54,13 @@ exports.OwnerRegistration  = async(req,res,next)=>{//to do-> to add multiple bui
             from:process.env.email_user,
             to:newOwner.email,
             subject:'REGISTRATION SUCCESSFULL',
-            text:`Dear Owner your Buisness have been set successfully. \n\n Please Note Your Buisness Code is ${newOwner.OrganisationCode}. \n\n HAPPY TRADING!! (: `
+            text:`Dear Owner your Buisness have been set successfully. \n\n Please Note Your OrganisationCode is ${newOwner.OrganisationCode}. \n\n. Your Buisness Code is ${newcreationCode}. \n\n  HAPPY TRADING!! :) `
         })
     }
     res.status(201).json({
         status:'success',
-        Details:newOwner
+        Details:newOwner,
+        Buisness:buisnessData
     })
    } catch(error) {
      res.status(500).json({
@@ -111,4 +135,43 @@ exports.patchOwner = async(req,res,next)=>{
         })
     }
     
+}
+
+exports.createNewBuisness = async(req,res,next)=>{
+    try{
+        const code = req.params.code;
+        const record = await Owner.findOne({OrganisationCode:code});
+        if(!record) {
+            return res.status(403).json({
+                status:'fail',
+                message:'the action is not permitted',
+            })
+        }
+        const BusinessCode = CreateCreationCode(code);
+        const newBusiness = await Buisness.create({
+            OrganisationCode:code,
+            Owner:record.Name,
+            phoneNumber:record.phoneNumber,
+            email:record.email,
+            CreationCode:BusinessCode
+        })
+        if(record.email) {
+            await transporter.sendMail({
+                from:process.env.email_user,
+                to:record.email,
+                subject:'NEW BUISNESS CREATION SUCCESSFULL',
+                text:`Dear ${record.Name}\n\n You have successfully created a new Business.\n\nThe Organisation code is same as ${record.OrganisationCode}.\n\nThe new Buisness code is ${BusinessCode}`
+            })
+        }
+        res.status(201).json({
+           status:'success',
+           newBusiness
+        })
+    }
+    catch(error) {
+        res.status(500).json({
+            status:'fail',
+            error:error.message
+        })
+    }
 }

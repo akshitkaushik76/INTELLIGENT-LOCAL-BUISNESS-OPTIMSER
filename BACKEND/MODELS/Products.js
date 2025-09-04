@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const product  = new mongoose.Schema({
     OrganisationCode:{
         type:String,
+        required:[true,'please provide the organisation code to continue']
     },
     productName:{
         type:String,
@@ -26,10 +27,10 @@ const product  = new mongoose.Schema({
         type:Number
     },
     dateofPurchase:{
-        type:Date,
+        type:String,
     },
     updationChanges:{
-        type:Date
+        type:String
     }
 })
 
