@@ -4,6 +4,7 @@ const products = require('./../MODELS/Products');
 const Products = require('./../MODELS/Products');
 const Customers = require('./../MODELS/Customer');
 const Transporter = require('./../Utils/email');
+const Owner = require('../MODELS/Owner');
 
 function generateCreditid(OrganizationCode) {
     const now = new Date();
@@ -60,4 +61,69 @@ exports.createCredits = async(req,res,next)=>{
             error:error.message
         })
     }
+}
+exports.updateCredit = async(req,res,next)=>{
+  try{
+    const creditCode = req.params.code;
+    const credit = await credits.findOne({uniqueCode:creditCode});
+    if(!credit) {
+      return res.status(404).json({
+        status:'fail',
+        message:'the credit code is wrong, enter a valid unique credit code'
+      })
+    }
+    let product = req.body.product;
+    let newProduct_data;
+    if(product) {
+      newProduct_data = await Products.findOne({productName:product});
+    }
+    else{
+      newProduct_data = await Products.findOne({productName:credit.product});
+    }
+    let newQuantity = req.body.quantity??credit.quantity;
+    let sellingPrice = req.body.sellingPrice??newProduct_data.sellingPrice;
+    let totalCost = newQuantity*sellingPrice;
+    const updatedData = {
+      ...req.body,
+      product:newProduct_data,
+      quantity:newQuantity,
+      totalCost:totalCost
+    }
+    const newCreditData = await credits.findOneAndUpdate({
+      uniqueCode:creditCode
+    },
+  {$set:updatedData},
+  {new:true,runValidators:true});
+   
+  const OrganisationCode = newCreditData.OrganisationCode;
+  const phoneNumber = newCreditData.phoneNumber;
+  const Cust = await Customers.findOne({phoneNumber});
+  const Owner = await Owner.findOne({OrganisationCode});
+  if(Cust.emailid) {
+    await Transporter.sendMail({
+      from:process.env.email_user,
+      to:Cust.emailid,
+      subject:'CREDIT UPDATION',
+      text:`DEAR ${Cust.Name}\n\n. Your credit with credit id ${newCreditData.uniqueCode} is updated\n\nSorry for inconvinience!!`
+    })
+  }
+  if(Owner.email) {
+    await Transporter.sendMail({
+      from:process.env.email_user,
+      to:Owner.email,
+      subject:'CREDIT UPDATION SUCCESSFULL',
+      text:`Dear ${Owner.Name}\n\nOn the basis of your request the credit with the credit code :${newCreditData.uniqueCode}.\n\n.THANKS FOR YOUR COOPERATION :))`
+    })
+  }
+  res.status(200).json({
+    status:'success',
+    newCreditData,
+  })
+
+  }catch(error){
+    res.status(500).json({
+      status:'fail',
+      error:error.message
+    })
+  }
 }
