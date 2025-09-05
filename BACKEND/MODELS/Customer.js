@@ -2,10 +2,10 @@ const mongoose  = require('mongoose');
 const validator = require('validator');
 
 const customer = new mongoose.Schema({
-    OrganisationCode:{
+    OrganisationCode:[{
         type:String,
         required:[true,'please enter the buisness code']
-    },
+    }],
     Name:{
         type:String,
         required:[true,'please enter the name to continue']
