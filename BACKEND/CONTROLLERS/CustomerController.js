@@ -3,38 +3,49 @@ const Customer = require('./../MODELS/Customer');
 const Owner = require('./../MODELS/Owner');
 const transporter = require('./../Utils/email')
 const Business = require('./../MODELS/BusinessSchema');
+
 exports.registerCustomer = async(req,res,next)=>{
-    try{
-        let {OrganisationCode} = req.body;
-        const BuisnessOwner = await Owner.findOne({OrganisationCode});
-        if(!BuisnessOwner) {
-            return res.status(404).json({
-                status:'fail',
-                message:`the organisation with code ${OrganisationCode} does not exist`
-            })
-        }
-        const newCustomer = await Customer.create({
-            ...req.body,
-            OrganisationCode:[OrganisationCode]
-        });
-        if(newCustomer.emailid) {
-           await transporter.sendMail({
-            from:process.env.email_user,
-            to:newCustomer.emailid,
-            subject:'WELCOME TO BUISNESS Mr. CUSTOMER!!',
-            text:`Dear ${newCustomer.Name} \n\n Welcome to the buisness\n\nYour subscribed organization code is ${OrganisationCode} `
-           })
-        }
-        res.status(200).json({
-            status:'success',
-            data:newCustomer
-        })
-    } catch(error) {
-        res.status(500).json({
-            status:'fail',
-            message:error.message
+   try{
+    const {OrganisationCode,Name,emailid,phoneNumber,password,confirmpassword} = req.body;
+    const BuisnessfromCode = await Business.find({OrganisationCode:OrganisationCode});
+    if(!BuisnessfromCode || BuisnessfromCode.length === 0) {
+        return res.status(404).json({
+            status:'failure',
+            message:'the businesses with the code does not exists'
         })
     }
+    const BuisnessCodes = BuisnessfromCode.map(p=>p.CreationCode);
+    const Ownername = BuisnessfromCode.map(p=>p.Owner);
+    
+    const Customerdata = await Customer.create({
+        ...req.body,
+        OrganisationCode:[OrganisationCode],
+        EnrolledBusinesses:BuisnessCodes,
+        Name,
+        emailid,
+        phoneNumber,
+        password,
+        confirmpassword
+  })
+  if(Customerdata.emailid) {
+    await transporter.sendMail({
+        from:process.env.email_user,
+        to:Customerdata.emailid,
+        subject:'SUCCESSFULL REGISTRATION',
+        text:`Dear ${Customerdata.Name}\n\nYour Registration with Owner ${Ownername[0]} with Buisness id: ${BuisnessCodes.join(", ")} is Successfull`
+    })
+  }
+  res.status(201).json({
+    status:'success',
+    Customerdata
+  })
+
+   }catch(error) {
+    res.status(500).json({
+        status:'failure',
+        message:error.message
+    })
+   }
 }
 
 exports.getCustomers = async(req,res,next)=>{
@@ -103,31 +114,86 @@ exports.patchCustomer = async(req,res,next)=>{
 }
 exports.SubscribetonewOrganisation = async(req,res,next)=>{
    try{
+    // const phoneNumber = req.params.phoneNumber;
+    // const CustomerData = await Customer.findOne({phoneNumber});
+    // if(!CustomerData.OrganisationCode) {
+    //     return res.status(404).json({
+    //         status:'fail',
+    //         message:'this is a invalid operation, register yourself as a customer to a buisness service first :('
+    //     })
+    // }
+    // const {OrganisationCode} = req.body;
+   
+    // const BuisnessfromCode = await Business.find({OrganisationCode:OrganisationCode});
+    // if(!BuisnessfromCode || BuisnessfromCode.length === 0) {
+    //     return res.status(404).json({
+    //         status:'failure',
+    //         message:'the businesses with the code does not exists'
+    //     })
+    // }
+    // const BuisnessCodes = BuisnessfromCode.map(p=>p.CreationCode);
+    // const newdata = await Customer.findOneAndUpdate(
+    //     {phoneNumber},
+    //     {$addToSet:{OrganisationCode:OrganisationCode}},
+    //     {$addToSet:{EnrolledBusinesses:BuisnessCodes}},
+    //     {new:true,runValidators:true}
+    // );
+    // if(newdata.emailid) {
+    //     await transporter.sendMail({
+    //         from:process.env.email_user,
+    //         to:newdata.emailid,
+    //         subject:'SUBSCRIPTION TO NEW SERVICE',
+    //         text:`Dear ${newdata.Name}\n\nYour are now registered to new service\n\nOrganisation code ${OrganisationCode}\n\n.If it was not you then contact the support at devsaccuflow@gmail.com`,
+    //     })
+    // }
+    // res.status(201).json({
+    //     status:'success',
+    //     details:newdata
+    // })
     const phoneNumber = req.params.phoneNumber;
-    const CustomerData = await Customer.findOne({phoneNumber});
-    if(!CustomerData.OrganisationCode) {
+    const customer = await Customer.findOne({phoneNumber:phoneNumber});
+    console.log(customer);
+    if(!customer) {
         return res.status(404).json({
-            status:'fail',
-            message:'this is a invalid operation, register yourself as a customer to a buisness service first :('
+            status:'failure',
+            message:'invalid phone number'
         })
     }
     const {OrganisationCode} = req.body;
-    const newdata = await Customer.findOneAndUpdate(
-        {phoneNumber},
-        {$addToSet:{OrganisationCode:OrganisationCode}},
-        {new:true,runValidators:true}
-    );
-    if(newdata.emailid) {
-        await transporter.sendMail({
-            from:process.env.email_user,
-            to:newdata.emailid,
-            subject:'SUBSCRIPTION TO NEW SERVICE',
-            text:`Dear ${newdata.Name}\n\nYour are now registered to new service\n\nOrganisation code ${OrganisationCode}\n\n.If it was not you then contact the support at devsaccuflow@gmail.com`,
+    const listofBuisness = await Business.find({OrganisationCode:OrganisationCode});
+    if(!listofBuisness || listofBuisness.length === 0) {
+        return res.status(404).json({
+            status:'failure',
+            message:'invalid code , please enter correct code'
+        })
+    } 
+
+    const Codes = listofBuisness.map(p=>p.CreationCode);
+    if(!Codes || Codes.length === 0) {
+        return res.status(404).json({
+            status:'failure',
+            message:'the Owner has no buisness!!'
         })
     }
-    res.status(201).json({
+    const updatedCustomer = await Customer.findOneAndUpdate(
+        {phoneNumber:phoneNumber},
+        {$addToSet:{
+            OrganisationCode:OrganisationCode,
+            EnrolledBusinesses:{$each:Codes}
+        }},
+        {new:true,runValidators:true}
+    );
+    if(updatedCustomer.emailid) {
+        await transporter.sendMail({
+            from:process.env.email_user,
+            to:updatedCustomer.emailid,
+            subject:'SUBSCRIBED TO NEW BUSINESS',
+            text:`dear Customer\n\nYou have successfully subscribed to new buisness : ${OrganisationCode}`
+        })
+    }
+    res.status(200).json({
         status:'success',
-        details:newdata
+        updatedCustomer
     })
    }catch(error) {
     res.status(500).json({

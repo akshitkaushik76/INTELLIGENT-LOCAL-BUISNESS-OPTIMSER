@@ -6,6 +6,9 @@ const customer = new mongoose.Schema({
         type:String,
         required:[true,'please enter the buisness code']
     }],
+    EnrolledBusinesses:[{
+        type:String,
+    }],
     Name:{
         type:String,
         required:[true,'please enter the name to continue']
@@ -13,7 +16,9 @@ const customer = new mongoose.Schema({
     emailid:{
         type:String,
         required:[true,'please enter an email id'],
-        validate:[validator.isEmail,'please enter a correct email id']
+        validate:[validator.isEmail,'please enter a correct email id'],
+        unique:[true,'the email is already registered'],
+        
     },
     phoneNumber:{
         type:Number,

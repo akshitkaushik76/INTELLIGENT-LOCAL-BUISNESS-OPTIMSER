@@ -14,10 +14,12 @@ function CreateCreationCode(OrganisationCode) {
    const minutes = now.getMinutes().toString().padStart(2,'0');
    const seconds = now.getSeconds().toString().padStart(2,'0');
 
-   const day = now.getDay().toString().padStart(2,'0');
-   const month = now.getMonth().toString().padStart(2,'0');
+   const day = now.getDate().toString().padStart(2,'0');
+   const month = (now.getMonth()+1).toString().padStart(2,'0');
    const year = now.getFullYear().toString().padStart(2,'0');
-
+   console.log("day :",day);
+   console.log("month :",month);
+   console.log("year: ",year);
    return `${OrganisationCode}${hours}:${minutes}:${seconds}${day}${month}${year}`;
 }
 async function generateOrganisationCode(Name) {

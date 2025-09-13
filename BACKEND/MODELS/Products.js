@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 // const validator = require('validator');
 
 const product  = new mongoose.Schema({
-    OrganisationCode:{
+    creationCode:{
         type:String,
         required:[true,'please provide the organisation code to continue']
     },

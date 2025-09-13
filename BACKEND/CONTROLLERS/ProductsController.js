@@ -1,5 +1,6 @@
 const express = require('express');
 const Product = require('./../MODELS/Products');
+const Business = require('./../MODELS/BusinessSchema');
 // const Customer = require('./../MODELS/Customer');
 const Owner = require('./../MODELS/Owner');
 const transporter = require('./../Utils/email');
@@ -19,11 +20,18 @@ function TimeFunction() {
 exports.addProduct = async(req,res,next)=>{
     try{
         // const data = await Product.create(req.body);
-       const {OrganizationCode,productName,costPrice,sellingPrice,quantity} = req.body;
-        const totalCostSpent = costPrice*quantity;
+       const {creationCode,productName,costPrice,sellingPrice,quantity} = req.body;
+       const Businessdata = await Business.findOne({CreationCode:creationCode})
+       if(!Businessdata) {
+        return res.status(404).json({
+            status:'failure',
+            message:'invalid business code was entered'
+        })
+       } 
+       const totalCostSpent = costPrice*quantity;
         const dateofPurchase = TimeFunction();
         const data = await Product.create({
-            OrganisationCode:OrganizationCode,
+            creationCode:Businessdata.CreationCode,
             productName,
             costPrice,
             sellingPrice,

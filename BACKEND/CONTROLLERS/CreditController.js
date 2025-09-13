@@ -95,7 +95,7 @@ exports.updateCredit = async(req,res,next)=>{
   {$set:updatedData},
   {new:true,runValidators:true});
    
-  const OrganisationCode = newCreditData.OrganisationCode;
+  const OrganisationCode = newCreditData.OrganizationCode;
   const phoneNumber = newCreditData.phoneNumber;
   const Cust = await Customers.findOne({phoneNumber});
   const Owner = await Owner.findOne({OrganisationCode});
