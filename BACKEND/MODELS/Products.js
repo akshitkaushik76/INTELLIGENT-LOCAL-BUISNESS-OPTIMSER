@@ -2,14 +2,18 @@ const mongoose = require('mongoose');
 // const validator = require('validator');
 
 const product  = new mongoose.Schema({
-    creationCode:{
+    BuisnessCode:{
         type:String,
-        required:[true,'please provide the organisation code to continue']
+     
     },
+    OrganisationCode:{
+       type:String,
+    },
+    
     productName:{
         type:String,
-        unique:[true,'please enter a unique name for the product'],
-        required:[true,'please enter a product name ']
+        // unique:[true,'please enter a unique name for the product'],
+         required:[true,'please enter a product name ']
     },
     costPrice:{
         type:Number,
@@ -31,7 +35,10 @@ const product  = new mongoose.Schema({
     },
     updationChanges:{
         type:String
+    },
+    productcode:{
+        type:String
     }
 })
-
+product.index({productName:1,BuisnessCode:1,OrganisationCode:1},{unique:true})
 module.exports = mongoose.model('Product',product);
