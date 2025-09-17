@@ -9,6 +9,12 @@ const credit = new mongoose.Schema({
         type:String,
         required:[true,'please enter the organisation code'],
     },
+    BuisnessCode:{
+        type:String,
+    },
+    productcode:{
+        type:String,
+    },
     product:{
         type:String,
         required:[true,'please enter the product name'],
@@ -42,9 +48,21 @@ const credit = new mongoose.Schema({
         type:String,
         default:function() {
             const now = new Date();
-            const hours = now.getHours().toString.padStart(2,'0');
+            const hours = now.getHours().toString().padStart(2,'0');
             const minutes = now.getMinutes().toString().padStart(2,'0');
             return `${hours}:${minutes}`;
+        }
+    },
+    settleDate:{
+        type:String,
+    },
+    settleTime:{
+        type:String,
+        default:function() {
+          const now = new Date();
+          const hour = now.getHours().toString().padStart(2,'0');
+          const min = now.getMinutes().toString().padStart(2,'0');
+          return `${hour}:${min}`;
         }
     },
     updatedAt:{
