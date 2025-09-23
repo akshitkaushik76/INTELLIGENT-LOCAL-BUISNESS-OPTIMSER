@@ -20,7 +20,7 @@ function CreateCreationCode(OrganisationCode) {
    console.log("day :",day);
    console.log("month :",month);
    console.log("year: ",year);
-   return `${OrganisationCode}${hours}:${minutes}:${seconds}${day}${month}${year}`;
+   return `${OrganisationCode}${hours}${minutes}${seconds}${day}${month}${year}`;
 }
 async function generateOrganisationCode(Name) {
     const prefix = Name.slice(0,3).toUpperCase();

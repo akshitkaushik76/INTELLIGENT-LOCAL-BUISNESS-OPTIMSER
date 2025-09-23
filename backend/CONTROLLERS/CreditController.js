@@ -101,7 +101,7 @@ exports.createCredits = async(req,res,next)=>{
 
 exports.updateCredit = async(req,res,next)=>{
   try{
-    const creditcode = req.params.code;
+    const creditcode = req.params.uniqueCode;
     const OrganizationCode = req.params.OrganisationCode;
     const BuisnessCode = req.params.BuisnessCode;
     const credit = await credits.findOne({uniqueCode:creditcode, BuisnessCode:BuisnessCode });
