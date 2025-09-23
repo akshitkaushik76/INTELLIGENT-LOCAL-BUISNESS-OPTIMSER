@@ -130,7 +130,7 @@ exports.updateCredit = async(req,res,next)=>{
         to:Cust.emailid,
         text:`Dear ${Cust.Name}\n\n
            Your Credit is issued Successfully\n\nThe Credit id is ${credit.uniqueCode}\n\nPlease note that the Credit id is the date/month/year + your credit number on this day\n\nYou can access your credit from the dashboard too!!\n\nTHANKS FOR TRADING. JUST REMEMBER WE ARE ALWAYS HERE FOR YOU AT\n\n
-           devsaccuflow@gmail.com  :))`
+           devsaccuflow@gmail.com  we are here for you !! :))`
       })
      }
     }
