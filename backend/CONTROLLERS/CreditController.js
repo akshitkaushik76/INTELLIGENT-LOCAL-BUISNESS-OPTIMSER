@@ -38,6 +38,12 @@ const computeSettletime = ()=>{
           return `${hour}:${min}`;
         
 }
+const computeSettleDate = ()=>{
+  const now = new Date();
+  const date = now.getDate().toString().padStart(2,'0');
+  const month = (now.getMonth()+1).toString().padStart(2,'0');
+  const year = now.getFullYear().toString().padStart(2,'0');
+}
 const time = ()=>{
   const now = new Date();
    const hour = now.getHours().toString().padStart(2,'0');
@@ -199,7 +205,50 @@ exports.updateCredit = async(req,res,next)=>{
      
   }
 
-
+exports.settleCreditChunk = async(req,res,next)=>{
+  try{
+    const BuisnessCode = req.params.BuisnessCode;
+    const phoneNumber = req.body.phoneNumber;
+    const amount = req.body.amount;
+    let remainingamount = Number(amount);
+    const creditinfo = await credits.find({
+      phoneNumber,
+      BuisnessCode,
+      status:{$in:['unpaid','partially-paid']}
+    }).sort({issued:1,time:1});
+    if(!creditinfo.length) {
+      res.status(404).json({status:'fail',message:'no unpaid or partially paid credits left'})
+    }
+    const updatedcredit = [];
+    for(let c of creditinfo) {
+      if(remainingamount <= 0) break;
+      if(remainingamount>=c.totalCost) {
+        remainingamount-=c.totalCost;
+        c.totalCost = 0;
+        c.status = 'settled';
+      } else{
+        c.totalCost-=remainingamount;
+        remainingamount = 0;
+        c.status = 'partially-paid';
+      }
+      const sTime = time();
+      c.settleDate =  computeSettletime();
+      c.settleTime =  computeSettleDate();
+      await c.save();
+      updatedcredit.push(c);
+    }
+    res.status(200).json({
+      status:'success',
+      message:`the payment of ${amount} applied successfully`,
+      updatedcredit
+    })
+  } catch(error) {
+    res.status(500).json({
+      status:'fail',
+      error:error.message
+    })
+  }
+}
 // exports.updateCredit = async(req,res,next)=>{
 //   try{
 //     const creditcode = req.params.uniqueCode;
