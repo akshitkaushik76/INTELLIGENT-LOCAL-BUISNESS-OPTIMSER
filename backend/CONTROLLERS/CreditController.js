@@ -38,7 +38,7 @@ const computeSettletime = ()=>{
           return `${hour}:${min}`;
         
 }
-const time = async ()=>{
+const time = ()=>{
   const now = new Date();
    const hour = now.getHours().toString().padStart(2,'0');
    const min = now.getMinutes().toString().padStart(2,'0');
@@ -97,43 +97,38 @@ exports.createCredits = async(req,res,next)=>{
     }
 }
 
-
-
 exports.updateCredit = async(req,res,next)=>{
   try{
-    const creditcode = req.params.uniqueCode;
-    const OrganizationCode = req.params.OrganisationCode;
+    const OrganisationCode = req.params.OrganisationCode;
     const BuisnessCode = req.params.BuisnessCode;
-    const credit = await credits.findOne({uniqueCode:creditcode, BuisnessCode:BuisnessCode });
+    const uniqueCode = req.params.uniqueCode;
+    const credit = await credits.findOne({OrganisationCode:OrganisationCode,BuisnessCode:BuisnessCode,uniqueCode:uniqueCode});
     if(!credit) {
-      return res.status(404).json({
-        status:'fail',
-        message:`the credit with the credit id : ${creditcode} does not exists`
-      })
+        res.status(404).json({
+          status:'failure',
+          message:`the credit with code ${uniqueCode} with this buisness does not exists`
+        })
     }
-    let isnewCustomer = 0;
-    
-    let newphonenumber = req.body.phoneNumber??credit.phoneNumber;
-    if(newphonenumber === req.body.phoneNumber) {
+     let isnewCustomer = 0;
+    let phoneNumber = req.body.phoneNumber??credit.phoneNumber;
+    if(phoneNumber === req.body.phoneNumber) {
       isnewCustomer = 1;
-      const Cust = await Customers.findOne({phoneNumber:newphonenumber});
-      if(!Cust) {
+      const Customerdetail = await Customer.findOne({phoneNumber});
+      if(!Customerdetail) {
         return res.status(404).json({
           status:'failure',
-          message:'the phone number provided is wrong'
+          message:'entered phone number is not registered, please register first'
         })
       }
-     if(Cust.emailid) {
-      await Transporter.sendMail({
-        subject:'CREDIT ISSUED!!!',
-        from:process.env.email_user,
-        to:Cust.emailid,
-        text:`Dear ${Cust.Name}\n\n
-           Your Credit is issued Successfully\n\nThe Credit id is ${credit.uniqueCode}\n\nPlease note that the Credit id is the date/month/year + your credit number on this day\n\nYou can access your credit from the dashboard too!!\n\nTHANKS FOR TRADING. JUST REMEMBER WE ARE ALWAYS HERE FOR YOU AT\n\n
-           devsaccuflow@gmail.com  we are here for you !! :))`
-      })
+      if(Customerdetail.emailid) {
+        await Transporter.sendMail({
+          from:process.env.email_user,
+          to:Customerdetail.emailid,
+          subject:'NEW CREDIT IS ALLOTED',
+          text:`DEAR CUSTOMER\n\n. Mistakenly we have alloted your credit to someone else\n\nUpon your request the credit is alloted to now\n\nRemember WE ARE ALWAYS HERE FOR U :))\n\n.We will provide u the credit code soon`
+        })
+      }
      }
-    }
     let newproductcode = req.body.productcode??credit.productcode;
     let sellingPrice = credit.totalCost/credit.quantity;
     let productname = credit.product;
@@ -161,7 +156,7 @@ exports.updateCredit = async(req,res,next)=>{
        updatedAt:time()
   }
   const updatedcredit = await credits.findOneAndUpdate(
-    {uniqueCode:creditcode},
+    {uniqueCode:uniqueCode},
     {
       $set:newcredit
     },
@@ -169,14 +164,14 @@ exports.updateCredit = async(req,res,next)=>{
       new:true,runValidators:true
     }
   )
- const owner = await Owner.findOne({OrganisationCode:OrganizationCode});
+ const owner = await Owner.findOne({OrganisationCode:OrganisationCode});
  if(owner.email) {
   await Transporter.sendMail({
     subject:'CREDIT UPDATED SUCCESSFULLY',
     from:process.env.email_user,
     to:owner.email,
     text: `Dear ${owner.Name}\n\n
-    Your request for updation of credit code with id:${creditcode} is processed successfully\n\n,
+    Your request for updation of credit code with id:${uniqueCode} is processed successfully\n\n,
     IF IT WAS NOT YOU please mail us at devsaccuflow@gmail.com`
   })
  }
@@ -201,7 +196,113 @@ exports.updateCredit = async(req,res,next)=>{
     error:error.message
   })
 }
-}
+     
+  }
+
+
+// exports.updateCredit = async(req,res,next)=>{
+//   try{
+//     const creditcode = req.params.uniqueCode;
+//     const OrganizationCode = req.params.OrganisationCode;
+//     const BuisnessCode = req.params.BuisnessCode;
+//     const credit = await credits.findOne({uniqueCode:creditcode, BuisnessCode:BuisnessCode });
+//     if(!credit) {
+//       return res.status(404).json({
+//         status:'fail',
+//         message:`the credit with the credit id : ${creditcode} does not exists`
+//       })
+//     }
+//     let isnewCustomer = 0;
+    
+//     let newphonenumber = req.body.phoneNumber??credit.phoneNumber;
+//     if(newphonenumber === req.body.phoneNumber) {
+//       isnewCustomer = 1;
+//       const Cust = await Customers.findOne({phoneNumber:newphonenumber});
+//       if(!Cust) {
+//         return res.status(404).json({
+//           status:'failure',
+//           message:'the phone number provided is wrong'
+//         })
+//       }
+//      if(Cust.emailid) {
+//       await Transporter.sendMail({
+//         subject:'CREDIT ISSUED!!!',
+//         from:process.env.email_user,
+//         to:Cust.emailid,
+//         text:`Dear ${Cust.Name}\n\n
+//            Your Credit is issued Successfully\n\nThe Credit id is ${credit.uniqueCode}\n\nPlease note that the Credit id is the date/month/year + your credit number on this day\n\nYou can access your credit from the dashboard too!!\n\nTHANKS FOR TRADING. JUST REMEMBER WE ARE ALWAYS HERE FOR YOU AT\n\n
+//            devsaccuflow@gmail.com  we are here for you !! :))`
+//       })
+//      }
+//     }
+//     let newproductcode = req.body.productcode??credit.productcode;
+//     let sellingPrice = credit.totalCost/credit.quantity;
+//     let productname = credit.product;
+//     if(newproductcode === req.body.productcode) {
+//       const products = await Products.findOne({productcode:newproductcode});
+//       if(!products) {
+//         return res.status(404).json({
+//           status:'failure',
+//           message:`the product with code ${newproductcode} does not exists`
+//         })
+//       }
+//       sellingPrice = products.sellingPrice; 
+//       productname = products.product;
+
+//     }
+    
+//     let newQuantity = req.body.quantity??credit.quantity;
+//     let newtotalCost = sellingPrice*newQuantity;
+//     const newcredit = {
+//       ...req.body,
+//        productcode:newproductcode,
+//        product:productname,
+//        quantity:newQuantity,
+//        totalCost:newtotalCost,
+//        updatedAt:time()
+//   }
+//   const updatedcredit = await credits.findOneAndUpdate(
+//     {uniqueCode:creditcode},
+//     {
+//       $set:newcredit
+//     },
+//     {
+//       new:true,runValidators:true
+//     }
+//   )
+//  const owner = await Owner.findOne({OrganisationCode:OrganizationCode});
+//  if(owner.email) {
+//   await Transporter.sendMail({
+//     subject:'CREDIT UPDATED SUCCESSFULLY',
+//     from:process.env.email_user,
+//     to:owner.email,
+//     text: `Dear ${owner.Name}\n\n
+//     Your request for updation of credit code with id:${creditcode} is processed successfully\n\n,
+//     IF IT WAS NOT YOU please mail us at devsaccuflow@gmail.com`
+//   })
+//  }
+//  if(!isnewCustomer) {
+//    const Cust = await Customer.findOne({phoneNumber:credit.phoneNumber});
+//    if(Cust.emailid) {
+//     await Transporter.sendMail({
+//       subject:'CREDIT UPDATED',
+//       from:process.env.email_user,
+//       to:Cust.emailid,
+//       text:`Dear ${Cust.Name}\n\n. Your credit with credit id ${updatedcredit.uniqueCode} is updated\n\nSorry for inconvinience!!`
+//     })
+//    }
+//  }
+//  res.status(200).json({
+//   status:'success',
+//   updatedcredit
+//  })
+// }catch(error) {
+//   res.status(500).json({
+//     status:'fail',
+//     error:error.message
+//   })
+// }
+// }
 
 // exports.settleCredit = async(req,res,next)=>{
 //   try{
