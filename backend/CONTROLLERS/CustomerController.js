@@ -28,11 +28,38 @@ exports.registerCustomer = async(req,res,next)=>{
         confirmpassword
   })
   if(Customerdata.emailid) {
+      const emailHtml = `
+        <div style="font-family: Arial, sans-serif; color: #333; padding: 20px; background: #f9f9f9; border-radius: 8px;">
+          <h2 style="color: #4CAF50; text-align: center;">🎉 Welcome to Our Business Family 🎉</h2>
+          <p>Dear <b>${Customerdata.Name}</b>,</p>
+          <p>We are excited to inform you that your registration has been <b style="color: #4CAF50;">successful</b>!</p>
+          
+          <div style="margin: 20px 0; padding: 15px; background: #fff; border: 1px solid #ddd; border-radius: 6px;">
+            <p><b>📌 Registered Business Owner:</b> ${Ownername[0]}</p>
+            <p><b>🏷️ Business Code(s):</b> ${BuisnessCodes.join(", ")}</p>
+            <p><b>📞 Phone Number:</b> ${Customerdata.phoneNumber}</p>
+          </div>
+
+          <p>Thank you for joining us. You can now enjoy seamless access to our services and stay updated with your credits and payments.</p>
+
+          <div style="text-align: center; margin-top: 30px;">
+            <a href="https://your-frontend-app.com/login" 
+               style="background: #4CAF50; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+              Login to Your Account
+            </a>
+          </div>
+
+          <p style="margin-top: 30px; font-size: 13px; color: #777;">
+            If you have any questions, feel free to reply to this email.<br>
+            — Team ${Ownername[0]}
+          </p>
+        </div>
+      `;
     await transporter.sendMail({
         from:process.env.email_user,
         to:Customerdata.emailid,
         subject:'SUCCESSFULL REGISTRATION',
-        text:`Dear ${Customerdata.Name}\n\nYour Registration with Owner ${Ownername[0]} with Buisness id: ${BuisnessCodes.join(", ")} is Successfull`
+        html:emailHtml
     })
   }
   res.status(201).json({
