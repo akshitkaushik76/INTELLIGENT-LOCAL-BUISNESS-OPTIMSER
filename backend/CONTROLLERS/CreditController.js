@@ -53,6 +53,26 @@ const time = ()=>{
     const year = now.getFullYear().toString().padStart(2,'0');
     return `${date}/${month}/${year} time=${hour}:${min}`
 }
+
+async function getTotalCreditsSofar(BuisnessCode,phoneNumber) {
+  const result = await credits.aggregate([
+    {$match:{phoneNumber:phoneNumber,BuisnessCode:BuisnessCode,status: { $in: ["unpaid", "partially-paid"] }}},
+    {$group:{
+      _id:null,
+      totalCredits:{$sum:"$totalCost"},
+      totaltransactions:{$sum:1}
+    }},
+    {
+      $project:{
+        _id:0,
+        totalCredits:1,
+        totaltransactions:1
+      }
+    }
+  ])
+  return result[0];
+}
+
 exports.createCredits = async(req,res,next)=>{  
     try{
       const OrganizationCode = req.params.OrganisationCode;
@@ -72,6 +92,8 @@ exports.createCredits = async(req,res,next)=>{
           message:`the Customer with the phone number ${phoneNumber} does not exist`
         })
       }
+      const totalCredits = await getTotalCreditsSofar(BuisnessCode,phoneNumber);
+      const totalCreditsValue = totalCredits ? totalCredits.totalCredits : 0;
       const credit =  await credits.create({
         phoneNumber,
         OrganisationCode:OrganizationCode,
@@ -83,12 +105,46 @@ exports.createCredits = async(req,res,next)=>{
         totalCost:quantity*product_data.sellingPrice,
       })
       if(Cust.emailid) {
+        const emailHtml = `
+        <div style="font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; border-radius: 8px; color: #333;">
+          <h2 style="color: #4CAF50; text-align: center;">💳 Credit Issued Successfully!</h2>
+
+          <p>Dear <b>${Cust.Name}</b>,</p>
+          <p>We are thrilled to inform you that your new credit has been <b style="color:#4CAF50;">successfully issued</b>!</p>
+
+          <div style="margin: 20px 0; padding: 15px; background: #fff; border: 1px solid #ddd; border-radius: 6px;">
+            <p><b>📌 Credit ID:</b> ${credit.uniqueCode}</p>
+            <p><b>🛍️ Product:</b> ${product_data.productName}</p>
+            <p><b>🔢 Quantity:</b> ${quantity}</p>
+            <p><b>💰 Total Cost:</b> ₹${quantity * product_data.sellingPrice}</p>
+          </div>
+
+          <div style="margin: 20px 0; padding: 15px; background: #fff; border: 1px solid #ddd; border-radius: 6px;">
+            <p><b>💳 Total Credits So Far:</b> ₹${totalCreditsValue + (quantity * product_data.sellingPrice)}</p>
+            
+          </div>
+
+          <p>You can access all your credits and transactions anytime from your dashboard.</p>
+
+          <div style="text-align: center; margin-top: 25px;">
+            <a href="https://your-frontend-app.com/dashboard"
+               style="background: #4CAF50; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+              View Dashboard
+            </a>
+          </div>
+
+          <p style="margin-top: 30px; font-size: 13px; color: #777;">
+            Thank you for trading with us! 💙<br>
+            We’re always here for you at <a href="mailto:devsaccuflow@gmail.com">devsaccuflow@gmail.com</a>
+          </p>
+        </div>
+      `;
+
         await Transporter.sendMail({
            subject:'CREDIT ISSUED SUCCESSFULLY',
            from:process.env.email_user,
            to:Cust.emailid,
-           text:`Dear ${Cust.Name}\n\n
-           Your Credit is issued Successfully\n\nThe Credit id is ${credit.uniqueCode}\n\nPlease note that the Credit id is the date/month/year + your credit number on this day\n\nYou can access your credit from the dashboard too!!\n\nTHANKS FOR TRADING. JUST REMEMBER WE ARE ALWAYS HERE FOR YOU AT\n\ndevsaccuflow@gmail.com  :))`
+           html:emailHtml
         })
       }
     res.status(201).json({
@@ -172,6 +228,7 @@ exports.updateCredit = async(req,res,next)=>{
   )
  const owner = await Owner.findOne({OrganisationCode:OrganisationCode});
  if(owner.email) {
+  
   await Transporter.sendMail({
     subject:'CREDIT UPDATED SUCCESSFULLY',
     from:process.env.email_user,
@@ -296,6 +353,31 @@ exports.settleCreditChunk = async(req,res,next)=>{
     })
   }
 }
+// async function getTotalCredits(email) {
+//     const name = await Customers.findOne({emailid:email});
+//     if(!name) {
+//         return res.status(404).json({
+//             status:'fail',
+//             message:'customer not found'
+//         })
+//     }
+//     const result  =  await CreditModel.aggregate([
+//         {$match:{recipient_name:name.name}},
+//         {$group:{
+//             _id:null,
+//             totalCredits:{$sum:"$totalCost"},
+//             totalTransactions:{$sum:1}
+//         }},
+//         { $project:{
+//             _id:0,
+//             totalCredits:1,
+//             totalTransactions:1,
+            
+//         }}
+         
+//     ])
+//   return result[0];
+// }
 // exports.settleCreditChunk = async (req, res, next) => {
 //   try {
 //     const BuisnessCode = req.params.BuisnessCode;
