@@ -20,6 +20,9 @@ const salesSchema = new mongoose.Schema({
     },
     time:{
         type:String
+    },
+    profitMade:{
+        type:Number
     }
 
 })

@@ -37,6 +37,7 @@ exports.CreateSale = async(req,res,next)=>{
             })
         }
         const totalAmount = product.sellingPrice*quantity;
+        const profit = (product.sellingPrice-product.costPrice)*quantity
         const sales = await Sales.create({
             OrganisationCode:OrganisationCode,
             BuisnessCode:BuisnessCode,
@@ -44,7 +45,8 @@ exports.CreateSale = async(req,res,next)=>{
             quantity:quantity,
             totalCost:totalAmount,
             date:computeSaleDate(),
-            time:computeSaletime()
+            time:computeSaletime(),
+            profitMade:profit
         })
         product.quantity = product.quantity-quantity
         await product.save();
@@ -59,3 +61,31 @@ exports.CreateSale = async(req,res,next)=>{
         })
     }
 }
+
+exports.findProfitperday = async(req,res,next)=>{
+    try{
+        const BuisnessCode = req.params.BuisnessCode;
+        const OrganisationCode = req.params.OrganisationCode;
+        const date = req.body.date;
+        const result = await Sales.find({date:date,BuisnessCode:BuisnessCode,OrganisationCode:OrganisationCode});
+        if( !result || result.length == 0) {
+            return res.status(404).json({
+                status:'failure',
+                message:'no record for this date'
+            })
+        }
+      const profitmade = result.reduce((sum,s)=>sum+s.profitMade,0);
+      res.status(200).json({
+        status:'success',
+         date,
+         profit:profitmade
+      })
+    } 
+    catch(error) {
+        res.status(500).json({
+            status:'failure',
+            error:error.message
+        })
+    }
+}
+
