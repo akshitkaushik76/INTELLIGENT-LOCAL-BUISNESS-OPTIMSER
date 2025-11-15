@@ -45,5 +45,37 @@ const login = (model)=> async(req,res,next)=>{
    }
 
 }
+
+const protect = (Model)=> asyncerrorhandler(async(req,res,next)=>{
+    const testToken = req.headers.authorization;
+    let token;
+    if(testToken && testToken.startsWith('Bearer')) {
+        token = testToken.split(' ')[1];
+    }
+    console.log(token);
+    if(!token) {
+        const error = new customerror('login to access the resources',401);
+        next(error);
+    }
+    const decodedToken = await util.promisify(jwt.verify)(token,process.env.SECRET_STRING);
+    console.log(decodedToken);
+    //if the user does not exists//
+    const user = await Model.findById(decodedToken.id);
+    console.log(user);
+    if(!user) {
+        const error = new customerror('the user with the token does not exist',401);
+        next(error);
+    }
+    if(await user.isPasswordChanged(decodedToken.iat)) {
+        const error = new customerror('the password was changed recently please login again',401);
+        next(error);
+    } 
+    req.user = user;
+    next();
+ })
+
 exports.loginOwner = login(Owners);
 exports.loginCustomer = login(Customers);
+exports.protectOwner = protect(Owners);
+exports.protectCustomer = protect(Customers);
+
