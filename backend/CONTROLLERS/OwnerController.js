@@ -7,6 +7,7 @@ const CHARSET = LETTERS+NUMBERS+SPECIAL;
 const transporter = require('./../Utils/email');
 const Buisness = require('./../MODELS/BusinessSchema');
 const BusinessSchema = require('./../MODELS/BusinessSchema');
+const jwt = require('jsonwebtoken');
 
 function CreateCreationCode(OrganisationCode) {
    const now = new Date();
@@ -51,6 +52,9 @@ exports.OwnerRegistration  = async(req,res,next)=>{//to do-> to add multiple bui
         password,
         confirmpassword
     })
+    const token = jwt.sign({id:newOwner._id},process.env.SECRET_STRING,{
+        expiresIn:process.env.EXPIRES_IN
+    })
     if(newOwner.email) {
         await transporter.sendMail({
             from:process.env.email_user,
@@ -61,6 +65,7 @@ exports.OwnerRegistration  = async(req,res,next)=>{//to do-> to add multiple bui
     }
     res.status(201).json({
         status:'success',
+        token,
         Details:newOwner,
         Buisness:buisnessData
     })

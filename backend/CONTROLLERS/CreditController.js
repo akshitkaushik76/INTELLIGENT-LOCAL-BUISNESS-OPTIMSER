@@ -1,12 +1,12 @@
 const express = require('express');
 const credits = require('./../MODELS/CreditSchema');
-const products = require('./../MODELS/Products');
+
 const Products = require('./../MODELS/Products');
 const Customers = require('./../MODELS/Customer');
 const Transporter = require('./../Utils/email');
 const Owner = require('../MODELS/Owner');
 const Customer = require('./../MODELS/Customer');
-
+const updateCustomerCreditAnalysis = require('./../ETL_controllers/CustomerCredit');
 
 
 const CreateCode = async (OrganisationCode) => {
@@ -19,8 +19,10 @@ const CreateCode = async (OrganisationCode) => {
   const dateString = `${day}${month}${year}`;
 
   // Count only credits issued today for this Organisation
-  const todayStart = new Date(now.setHours(0, 0, 0, 0));
-  const todayEnd = new Date(now.setHours(23, 59, 59, 999));
+const todayStart = new Date();
+todayStart.setHours(0, 0, 0, 0);
+const todayEnd = new Date();
+todayEnd.setHours(23, 59, 59, 999);
 
   const countToday = await credits.countDocuments({
     OrganisationCode,
@@ -43,6 +45,7 @@ const computeSettleDate = ()=>{
   const date = now.getDate().toString().padStart(2,'0');
   const month = (now.getMonth()+1).toString().padStart(2,'0');
   const year = now.getFullYear().toString().padStart(2,'0');
+  return `${date}/${month}/${year}`;
 }
 const time = ()=>{
   const now = new Date();
@@ -101,9 +104,13 @@ exports.createCredits = async(req,res,next)=>{
         productcode:productCode,
         product:product_data.productName,
         quantity,
-        uniqueCode:await CreateCode(),
+        uniqueCode:await CreateCode(OrganizationCode),
         totalCost:quantity*product_data.sellingPrice,
       })
+      updateCustomerCreditAnalysis(phoneNumber, BuisnessCode)
+  .then(() => console.log(`✅ Credit analytics updated for ${phoneNumber}`))
+  .catch(err => console.error(`❌ Credit ETL failed: ${err.message}`));
+
       if(Cust.emailid) {
         const emailHtml = `
         <div style="font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; border-radius: 8px; color: #333;">
@@ -166,7 +173,7 @@ exports.updateCredit = async(req,res,next)=>{
     const uniqueCode = req.params.uniqueCode;
     const credit = await credits.findOne({OrganisationCode:OrganisationCode,BuisnessCode:BuisnessCode,uniqueCode:uniqueCode});
     if(!credit) {
-        res.status(404).json({
+       return res.status(404).json({
           status:'failure',
           message:`the credit with code ${uniqueCode} with this buisness does not exists`
         })
@@ -203,7 +210,7 @@ exports.updateCredit = async(req,res,next)=>{
         })
       }
       sellingPrice = products.sellingPrice; 
-      productname = products.product;
+      productname = products.productname;
 
     }
     
@@ -226,6 +233,9 @@ exports.updateCredit = async(req,res,next)=>{
       new:true,runValidators:true
     }
   )
+     updateCustomerCreditAnalysis(phoneNumber, BuisnessCode)
+  .then(() => console.log(`✅ Credit analytics updated for ${phoneNumber}`))
+  .catch(err => console.error(`❌ Credit ETL failed: ${err.message}`));
  const owner = await Owner.findOne({OrganisationCode:OrganisationCode});
  if(owner.email) {
   
@@ -281,7 +291,7 @@ exports.settleCreditChunk = async(req,res,next)=>{
       status:{$in:['unpaid','partially-paid']}
     }).sort({issued:1,time:1});
     if(!creditinfo.length) {
-      res.status(404).json({status:'fail',message:'no unpaid or partially paid credits left'})
+      return res.status(404).json({status:'fail',message:'no unpaid or partially paid credits left'})
     }
     const updatedcredit = [];
       const emailSummary = {
@@ -310,8 +320,8 @@ exports.settleCreditChunk = async(req,res,next)=>{
         c.status = "partially-paid";
       }
 
-      c.settleDate = computeSettletime();
-      c.settleTime = computeSettleDate();
+      c.settleDate = computeSettleDate();
+      c.settleTime =  computeSettletime(); 
       await c.save();
       updatedcredit.push(c);
     }

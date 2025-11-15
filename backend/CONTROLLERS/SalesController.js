@@ -1,5 +1,6 @@
 const Sales  = require('../MODELS/SalesSchema');
 const Product = require('../MODELS/Products');
+const updateProductInventoryAnalysis = require('../ETL_controllers/productInventory')
 const computeSaletime = ()=>{
   
           const now = new Date();
@@ -50,6 +51,9 @@ exports.CreateSale = async(req,res,next)=>{
         })
         product.quantity = product.quantity-quantity
         await product.save();
+        updateProductInventoryAnalysis(OrganisationCode,BuisnessCode, productCode)
+      .then(() => console.log(`✅ Inventory analytics updated for ${productCode}`))
+      .catch(err => console.error(`❌ Inventory ETL failed: ${err.message}`));
         res.status(200).json({
             status:'success',
             data:sales

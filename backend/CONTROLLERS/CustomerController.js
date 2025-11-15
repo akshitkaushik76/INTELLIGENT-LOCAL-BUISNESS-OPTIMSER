@@ -3,6 +3,7 @@ const Customer = require('./../MODELS/Customer');
 const Owner = require('./../MODELS/Owner');
 const transporter = require('./../Utils/email')
 const Business = require('./../MODELS/BusinessSchema');
+const jwt = require('jsonwebtoken');
 
 exports.registerCustomer = async(req,res,next)=>{
    try{
@@ -27,6 +28,9 @@ exports.registerCustomer = async(req,res,next)=>{
         password,
         confirmpassword
   })
+  const token  = jwt.sign({id:Customerdata._id},process.env.SECRET_STRING,{
+    expiresIn:process.env.EXPIRES_IN
+  });
   if(Customerdata.emailid) {
       const emailHtml = `
         <div style="font-family: Arial, sans-serif; color: #333; padding: 20px; background: #f9f9f9; border-radius: 8px;">
@@ -64,6 +68,7 @@ exports.registerCustomer = async(req,res,next)=>{
   }
   res.status(201).json({
     status:'success',
+    token,
     Customerdata
   })
 

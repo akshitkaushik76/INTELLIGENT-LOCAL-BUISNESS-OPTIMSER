@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
+const bcrypt = require('bcryptjs')
 const owner = new mongoose.Schema({
     OrganisationCode:{
         type:String,
@@ -36,6 +37,15 @@ const owner = new mongoose.Schema({
         }
     
 })
-
+owner.pre('save',async function(next){
+    if(!this.isModified('password')) {
+        return next();
+    }
+    this.password = await bcrypt.hash(this.password,12);
+    this.confirmpassword = undefined
+})
+owner.methods.comparePasswordinDb = async function(pswd,pswdDB) {
+    return await bcrypt.compare(pswd,pswdDB);
+}
 module.exports = mongoose.model('Owner',owner);
 

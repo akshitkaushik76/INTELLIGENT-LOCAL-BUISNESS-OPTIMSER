@@ -9,7 +9,7 @@ const ProductInventoryAnalyticsSchema = new mongoose.Schema({
     totalQuantitySold: { type: Number, default: 0 },
     totalRevenueGenerated: { type: Number, default: 0 },
     averageDailySales: { type: Number, default: 0 },
-    lastSoldDate: { type: Date },
+    lastSoldDate: { type: String },
     currentStock: { type: Number, default: 0 },
     daysOfStockLeft: { type: Number, default: 0 }, // currentStock / avgDailySales
 
