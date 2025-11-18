@@ -1,3 +1,4 @@
+const { isMACAddress } = require('validator');
 const Customers = require('./../MODELS/Customer');
 const Owners = require('./../MODELS/Owner');
 const jwt = require('jsonwebtoken');
@@ -8,23 +9,24 @@ const authtoken = (data)=>{
   return token;
 }
 
-const login = (model)=> async(req,res,next)=>{
+exports.loginCustomer =   async(req,res,next)=>{
    try{
-    const {email,password} = req.body;
-    if(!email || password) {
+    const {emailid,password} = req.body;
+    if(!emailid || !password) {
       return res.status(400).json({
         status:'failure',
         message:'please provide email and password to continue'
       })
     }
-    const user = await model.findOne({emailid}).select('+password');
+    const user = await Customers.findOne({emailid}).select('+password');
+    console.log(user);
     if(!user) {
       return res.status(404).json({
         status:'failure',
         message:'email  is wrong ,please enter correct credentials to continue'
       })
     }
-    const isMatch = await comparePasswordinDb(password,user.password);
+    const isMatch = await user.comparePasswordinDb(password,user.password);
     if(!isMatch) {
       return res.status(400).json({
         status:'failure',
@@ -45,37 +47,70 @@ const login = (model)=> async(req,res,next)=>{
    }
 
 }
-
-const protect = (Model)=> asyncerrorhandler(async(req,res,next)=>{
-    const testToken = req.headers.authorization;
-    let token;
-    if(testToken && testToken.startsWith('Bearer')) {
-        token = testToken.split(' ')[1];
+exports.loginOwner = async(req,res,next)=>{
+  try{
+    const {email,password} = req.body;
+    if(!email || !password) {
+      return res.status(400).json({
+        status:"failure",
+        message:"please provide all the credentials to continue"
+      })
     }
-    console.log(token);
-    if(!token) {
-        const error = new customerror('login to access the resources',401);
-        next(error);
-    }
-    const decodedToken = await util.promisify(jwt.verify)(token,process.env.SECRET_STRING);
-    console.log(decodedToken);
-    //if the user does not exists//
-    const user = await Model.findById(decodedToken.id);
-    console.log(user);
+    const user = await Owners.findOne({email}).select('+password');
     if(!user) {
-        const error = new customerror('the user with the token does not exist',401);
-        next(error);
+      return res.status(404).json({
+        status:'fail',
+        message:"please provide the correct email address to continue"
+      })
     }
-    if(await user.isPasswordChanged(decodedToken.iat)) {
-        const error = new customerror('the password was changed recently please login again',401);
-        next(error);
-    } 
-    req.user = user;
-    next();
- })
+    const isMatch = await user.comparePasswordinDb(password,user.password);
+    if(!isMatch) {
+      return res.status(400).json({
+        status:'failure',
+        message:"please provide correct password to continue"
+      })
+    }
+    const token = authtoken(user);
+    res.status(200).json({
+      status:'success',
+      message:"loggedin successfully",
+      token
+    })
+  }catch(error) {
+    res.status(500).json({
+      status:'fail',
+      error:error.message
+    })
+  }
+}
+// const protect = (Model)=> asyncerrorhandler(async(req,res,next)=>{
+//     const testToken = req.headers.authorization;
+//     let token;
+//     if(testToken && testToken.startsWith('Bearer')) {
+//         token = testToken.split(' ')[1];
+//     }
+//     console.log(token);
+//     if(!token) {
+//         const error = new customerror('login to access the resources',401);
+//         next(error);
+//     }
+//     const decodedToken = await util.promisify(jwt.verify)(token,process.env.SECRET_STRING);
+//     console.log(decodedToken);
+//     //if the user does not exists//
+//     const user = await Model.findById(decodedToken.id);
+//     console.log(user);
+//     if(!user) {
+//         const error = new customerror('the user with the token does not exist',401);
+//         next(error);
+//     }
+//     if(await user.isPasswordChanged(decodedToken.iat)) {
+//         const error = new customerror('the password was changed recently please login again',401);
+//         next(error);
+//     } 
+//     req.user = user;
+//     next();
+//  })
 
-exports.loginOwner = login(Owners);
-exports.loginCustomer = login(Customers);
-exports.protectOwner = protect(Owners);
-exports.protectCustomer = protect(Customers);
+// exports.protectOwner = protect(Owners);
+// exports.protectCustomer = protect(Customers);
 

@@ -6,7 +6,7 @@ const CustomerRouter = require('./ROUTES/CustomerRoutes');
 const CreditRouter = require('./ROUTES/CreditRouter');
 const ProductRouter = require('./ROUTES/ProductRouter');
 const salesRouter = require('./ROUTES/SalesRouter');
-const AuthCustomerRouter = require('./AUTHROUTERS/authCustomerRoute');
+const AuthCustomerRouter = require('./AUTHROUTERS/authrouter');
 const mongoose = require('mongoose');
 // const { applyTimestamps } = require('./MODELS/Owner');
 console.log(process.env.PORT);

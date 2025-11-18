@@ -34,7 +34,7 @@ const customer = new mongoose.Schema({
         type:String,
         required:[true,'please re-enter the password for confirmation'],
         validate:function(value) {
-            value == this.password
+            return value == this.password
         },
         message:'the password and confirm password does not match'
     }
@@ -48,5 +48,9 @@ customer.pre('save',async function(next){
     this.confirmpassword = undefined;
     next();
 })
+
+customer.methods.comparePasswordinDb = async function(pswd,pswdDB) {
+    return await bcrypt.compare(pswd,pswdDB);
+}
 
 module.exports = mongoose.model('Customer',customer);
