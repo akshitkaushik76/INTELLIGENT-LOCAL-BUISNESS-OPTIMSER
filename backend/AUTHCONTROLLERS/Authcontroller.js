@@ -2,6 +2,7 @@ const { isMACAddress } = require('validator');
 const Customers = require('./../MODELS/Customer');
 const Owners = require('./../MODELS/Owner');
 const jwt = require('jsonwebtoken');
+const util = require('util');
 const authtoken = (data)=>{
   const token  = jwt.sign({id:data._id},process.env.SECRET_STRING,{
     expiresIn:process.env.EXPIRES_IN
@@ -83,34 +84,41 @@ exports.loginOwner = async(req,res,next)=>{
     })
   }
 }
-// const protect = (Model)=> asyncerrorhandler(async(req,res,next)=>{
-//     const testToken = req.headers.authorization;
-//     let token;
-//     if(testToken && testToken.startsWith('Bearer')) {
-//         token = testToken.split(' ')[1];
-//     }
-//     console.log(token);
-//     if(!token) {
-//         const error = new customerror('login to access the resources',401);
-//         next(error);
-//     }
-//     const decodedToken = await util.promisify(jwt.verify)(token,process.env.SECRET_STRING);
-//     console.log(decodedToken);
-//     //if the user does not exists//
-//     const user = await Model.findById(decodedToken.id);
-//     console.log(user);
-//     if(!user) {
-//         const error = new customerror('the user with the token does not exist',401);
-//         next(error);
-//     }
-//     if(await user.isPasswordChanged(decodedToken.iat)) {
-//         const error = new customerror('the password was changed recently please login again',401);
-//         next(error);
-//     } 
-//     req.user = user;
-//     next();
-//  })
+const protect = (Model)=> async(req,res,next)=>{
+    const testToken = req.headers.authorization;
+    let token;
+    if(testToken && testToken.startsWith('Bearer')) {
+        token = testToken.split(' ')[1];
+    }
+    console.log(token);
+    if(!token) {
+        return res.status(400).json({
+          status:'fail',
+          message:"login for access information"
+        })
+    }
+    const decodedToken = await util.promisify(jwt.verify)(token,process.env.SECRET_STRING);
+    console.log(decodedToken);
+    //if the user does not exists//
+    const user = await Model.findById(decodedToken.id);
+    console.log(user);
+    if(!user) {
+       return res.status(404).json({
+        status:'fail',
+        message:"unauthorised access!! the user with the token does not exits"
+       })
+    }
+    if(await user.isPasswordChanged(decodedToken.iat)) {
+       return res.status(400).json({
+          status:'failure',
+          message:"password changed recently , please login again"
+       })
+    } 
+    req.user = user;
+    next();
+ }
 
-// exports.protectOwner = protect(Owners);
-// exports.protectCustomer = protect(Customers);
+
+exports.protectOwner = protect(Owners);
+exports.protectCustomer = protect(Customers);
 

@@ -182,3 +182,38 @@ exports.createNewBuisness = async(req,res,next)=>{
         })
     }
 }
+exports.BuisnessInfo = async(req,res,next)=>{
+    try{
+        const email = req.body.email;
+        const owner = await Owner.findOne({email});
+        if(!owner) {
+            return res.status(404).json({
+                status:'failure',
+                message:'owner with the email is not registered'
+            })
+        }
+        const buisness = await Buisness.find({OrganisationCode:owner.OrganisationCode});
+        let buisnessarr = [];
+        for(bui in buisness) {
+            buisnessarr.push(buisness[bui].CreationCode);
+        }
+        if(!buisness) {
+            return res.status(404).json({
+                status:'failure',
+                message:'buisness is not registered for this organisation code'
+            })
+        }
+        res.status(200).json({
+            status:'success',
+            name:owner.Name,
+            Organisation:owner.OrganisationCode,
+            Buisness:buisnessarr
+       })
+
+    }catch(error) {
+         res.status(400).json({
+            status:'failure',
+            message:error.message
+        })
+    }
+}

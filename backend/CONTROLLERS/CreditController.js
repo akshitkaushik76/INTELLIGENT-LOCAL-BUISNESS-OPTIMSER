@@ -7,6 +7,7 @@ const Transporter = require('./../Utils/email');
 const Owner = require('../MODELS/Owner');
 const Customer = require('./../MODELS/Customer');
 const updateCustomerCreditAnalysis = require('./../ETL_controllers/CustomerCredit');
+const CreditSchema = require('./../MODELS/CreditSchema');
 
 
 const CreateCode = async (OrganisationCode) => {
@@ -363,6 +364,56 @@ exports.settleCreditChunk = async(req,res,next)=>{
     })
   }
 }
+
+exports.getCreditinfo = async(req,res,next)=>{
+  try{
+    const OrganisationCode = req.params.OrganisationCode;
+    const BuisnessCode = req.params.BuisnessCode;
+    const uniqueCode = req.body.uniqueCode
+    const creditinfo = await CreditSchema.findOne({OrganisationCode,BuisnessCode,uniqueCode});
+    console.log(creditinfo);
+    if(!creditinfo) {
+      return res.status(400).json({
+        status:"failure",
+        message:"the credit credentials was incorrect ,please enter correct credentials"
+      })
+    }
+    res.status(200).json({
+      status:"success",
+      creditinfo
+    })
+  }catch(error) {
+    res.status(500).json({
+      status:'failure',
+      error:error.message
+    })
+  }
+}
+exports.getAllCredit = async(req,res,next)=>{
+  try{
+    const phoneNumber = req.body.phoneNumber;
+    const OrganisationCode = req.params.OrganisationCode;
+    const BuisnessCode = req.params.BuisnessCode;
+    const creditinfo = await CreditSchema.find({phoneNumber,OrganisationCode,BuisnessCode});
+    console.log(creditinfo);
+    if(!creditinfo) {
+      return res.status(400).json({
+        status:'failure',
+        message:"the credit credentials are wrong, please provide correct credentials"
+      })
+    }
+    res.status(200).json({
+      status:'success',
+      creditinfo
+    })
+  }catch(error) {
+    res.status(500).json({
+      status:"failure",
+      error:error.message
+    })
+  }
+}
+
 // async function getTotalCredits(email) {
 //     const name = await Customers.findOne({emailid:email});
 //     if(!name) {

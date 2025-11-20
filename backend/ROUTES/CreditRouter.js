@@ -1,10 +1,13 @@
 const express = require('express');
 const CreditController = require('../CONTROLLERS/CreditController');
+const AuthController = require('./../AUTHCONTROLLERS/Authcontroller');
 const router = express.Router();
 // router.route('/addCredit').post(CreditController.createCredits);
-router.route('/addCredit/:OrganisationCode/:BuisnessCode').post(CreditController.createCredits);
-router.route('/updateCredit/:OrganisationCode/:BuisnessCode/:uniqueCode').patch(CreditController.updateCredit);
-router.route('/SettleCreditChunk/:BuisnessCode').post(CreditController.settleCreditChunk);
+router.route('/addCredit/:OrganisationCode/:BuisnessCode').post(AuthController.protectOwner,CreditController.createCredits);
+router.route('/updateCredit/:OrganisationCode/:BuisnessCode/:uniqueCode').patch(AuthController.protectOwner,CreditController.updateCredit);
+router.route('/SettleCreditChunk/:BuisnessCode').post(AuthController.protectOwner,CreditController.settleCreditChunk);
+router.route('/getCredit/:OrganisationCode/:BuisnessCode').get(AuthController.protectCustomer,CreditController.getCreditinfo);
+router.route('/getCreditphno/:OrganisationCode/:BuisnessCode').get(AuthController.protectOwner,CreditController.getAllCredit);
 module.exports = router;
 
 // async function getTotalCredits(email) {

@@ -1,7 +1,7 @@
 const express = require('express');
 const salesController = require('../CONTROLLERS/SalesController');
 const router = express.Router();
-
-router.route('/addSales/:OrganisationCode/:BuisnessCode').post(salesController.CreateSale);
-router.route('/profitThisDay/:OrganisationCode/:BuisnessCode').get(salesController.findProfitperday);
+const AuthController = require('./../AUTHCONTROLLERS/Authcontroller');
+router.route('/addSales/:OrganisationCode/:BuisnessCode').post(AuthController.protectOwner,salesController.CreateSale);
+router.route('/profitThisDay/:OrganisationCode/:BuisnessCode').get(AuthController.protectOwner,salesController.findProfitperday);
 module.exports = router;

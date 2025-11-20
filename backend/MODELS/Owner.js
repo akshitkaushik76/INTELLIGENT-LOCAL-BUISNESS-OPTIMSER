@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcryptjs')
+const crypto = require('crypto');
 const owner = new mongoose.Schema({
     OrganisationCode:{
         type:String,
@@ -34,7 +35,10 @@ const owner = new mongoose.Schema({
             return value == this.password
         },
         message:'the password and confirm password does not match'
-        }
+        },
+    passwordChangedAt:Date,
+    passwordResetToken:String,
+    passwordResetTokenExpires:Date
     
 })
 owner.pre('save',async function(next){
@@ -46,6 +50,22 @@ owner.pre('save',async function(next){
 })
 owner.methods.comparePasswordinDb = async function(pswd,pswdDB) {
     return await bcrypt.compare(pswd,pswdDB);
+}
+
+owner.methods.isPasswordChanged = async function(JWTTimestamp){
+    if(this.passwordChangedAt) {
+        console.log("this password changed at",JWTTimestamp);
+        const pswdChangedTimestamp = parseInt(this.passwordChangedAt.getTime()/1000,10);
+        return JWTTimestamp < pswdChangedTimestamp;
+    }
+    return false;
+}
+owner.methods.createResetPasswordToken  = function() {
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    this.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    this.passwordResetTokenExpires = Date.now()+ 10*60*1000;
+    console.log(resetToken,this.passwordResetToken);
+    return resetToken;
 }
 module.exports = mongoose.model('Owner',owner);
 
