@@ -38,6 +38,7 @@ exports.loginCustomer =   async(req,res,next)=>{
     res.status(200).json({
       status:'success',
       message:'logged in successfully',
+      
       token
     })
    }catch(error) {
@@ -75,6 +76,7 @@ exports.loginOwner = async(req,res,next)=>{
     res.status(200).json({
       status:'success',
       message:"loggedin successfully",
+      OrganisationCode:user.OrganisationCode,
       token
     })
   }catch(error) {

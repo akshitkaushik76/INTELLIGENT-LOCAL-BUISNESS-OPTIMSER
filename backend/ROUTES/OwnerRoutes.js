@@ -6,5 +6,7 @@ router.route('/RegisterOwner').post(OwnerController.OwnerRegistration);
 router.route('/getAllOwner').get(OwnerController.getAllOwners);
 router.route('/updateOwner/:phoneNumber').patch(AuthController.protectOwner,OwnerController.patchOwner);
 router.route('/newBuisness/:code').post(AuthController.protectOwner,OwnerController.createNewBuisness);
-router.route('/getbuisness').get(OwnerController.BuisnessInfo);
+// router.route('/getbuisness').get(OwnerController.BuisnessInfo);
+router.route('/loginPayload').get(OwnerController.loginpayload);
+router.route('/BuisnessInfo/:BuisnessCode').get(OwnerController.findBuisnessAnalytics);
 module.exports = router;

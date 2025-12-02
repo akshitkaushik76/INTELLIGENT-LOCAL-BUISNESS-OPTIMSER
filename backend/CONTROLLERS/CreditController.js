@@ -82,6 +82,7 @@ exports.createCredits = async(req,res,next)=>{
       const OrganizationCode = req.params.OrganisationCode;
       const BuisnessCode = req.params.BuisnessCode
       const {phoneNumber,productCode,quantity} = req.body;
+      console.log(req.body);
       const product_data = await Products.findOne({productcode:productCode});
       if(!product_data) {
         return res.status(404).json({

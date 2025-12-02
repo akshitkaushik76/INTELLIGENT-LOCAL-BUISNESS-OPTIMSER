@@ -8,6 +8,8 @@ const transporter = require('./../Utils/email');
 const Buisness = require('./../MODELS/BusinessSchema');
 const BusinessSchema = require('./../MODELS/BusinessSchema');
 const jwt = require('jsonwebtoken');
+const Credit  = require('./../MODELS/CreditSchema');
+const Products = require('./../MODELS/Products');
 
 function CreateCreationCode(OrganisationCode) {
    const now = new Date();
@@ -182,38 +184,84 @@ exports.createNewBuisness = async(req,res,next)=>{
         })
     }
 }
-exports.BuisnessInfo = async(req,res,next)=>{
+// exports.BuisnessInfo = async(req,res,next)=>{
+//     try{
+//         const email = req.body.email;
+//         const owner = await Owner.findOne({email});
+//         if(!owner) {
+//             return res.status(404).json({
+//                 status:'failure',
+//                 message:'owner with the email is not registered'
+//             })
+//         }
+//         const buisness = await Buisness.find({OrganisationCode:owner.OrganisationCode});
+//         let buisnessarr = [];
+//         for(bui in buisness) {
+//             buisnessarr.push(buisness[bui].CreationCode);
+//         }
+//         if(!buisness) {
+//             return res.status(404).json({
+//                 status:'failure',
+//                 message:'buisness is not registered for this organisation code'
+//             })
+//         }
+//         res.status(200).json({
+//             status:'success',
+//             name:owner.Name,
+//             Organisation:owner.OrganisationCode,
+//             Buisness:buisnessarr
+//        })
+
+//     }catch(error) {
+//          res.status(400).json({
+//             status:'failure',
+//             message:error.message
+//         })
+//     }
+// }
+exports.loginpayload = async(req,res,next)=>{
     try{
         const email = req.body.email;
-        const owner = await Owner.findOne({email});
-        if(!owner) {
-            return res.status(404).json({
-                status:'failure',
-                message:'owner with the email is not registered'
-            })
-        }
-        const buisness = await Buisness.find({OrganisationCode:owner.OrganisationCode});
-        let buisnessarr = [];
-        for(bui in buisness) {
-            buisnessarr.push(buisness[bui].CreationCode);
-        }
-        if(!buisness) {
-            return res.status(404).json({
-                status:'failure',
-                message:'buisness is not registered for this organisation code'
-            })
-        }
+        const OwnerData = await Owner.findOne({email});
+        const OrganisationCode = OwnerData.OrganisationCode;
+        const name = OwnerData.Name;
+        const buisnesses = await Buisness.find({OrganisationCode});
+        console.log(buisnesses);
+       
+        const BuisnessList = buisnesses.map(b=>b.CreationCode);
         res.status(200).json({
             status:'success',
-            name:owner.Name,
-            Organisation:owner.OrganisationCode,
-            Buisness:buisnessarr
-       })
-
-    }catch(error) {
-         res.status(400).json({
+            Name:name,            
+            OrganisationCode:OrganisationCode,
+            Buisness:BuisnessList
+            
+        })
+    } catch(error) {
+        res.status(500).json({
             status:'failure',
             message:error.message
+        })
+    }
+}
+exports.findBuisnessAnalytics = async(req,res,next)=>{
+    try{
+        const OrganisationCode = req.params.OrganisationCode;
+        const BuisnessCode = req.params.BuisnessCode;
+        const Credits = await Credit.find({BuisnessCode})
+        const CreditCount = Credits.length;
+        console.log(CreditCount);
+        const product = await Products.find({BuisnessCode});
+        const productCode = product.map(p=>p.productcode);
+        res.status(200).json({
+            status:'success',
+            TotalCreditTransactions:CreditCount,
+            products:productCode
+        }) 
+
+    } catch(error){
+        res.status(500).json({
+            status:'failure',
+            error:error.message
         })
     }
 }
